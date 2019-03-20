@@ -16,4 +16,4 @@ Install instructions:
 
 Sample plot:
 
-<img src="https://raw.githubusercontent.com/heistp/cctrace/master/sample_plot.png" width="968" height="617">
+<img src="https://raw.githubusercontent.com/heistp/cctrace/master/sample_plot.png">
