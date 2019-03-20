@@ -13,3 +13,7 @@ Install instructions:
 3. Install cctrace: `go get -u github.com/heistp/cctrace`
 4. Make sure location of cctrace is in your `PATH` (by default `~/go/bin`)
 5. Run `cctrace` for usage
+
+Sample plot:
+
+<img src="https://raw.githubusercontent.com/heistp/cctrace/master/sample_plot.png" width="968" height="617">
