@@ -26,6 +26,7 @@ var eventTypeColors = map[EventType]string{
 	EventTypeCE:  "red",
 	EventTypeECE: "blue",
 	EventTypeCWR: "green",
+	EventTypeNS:  "purple",
 }
 
 var eventTypeLabels = map[EventType]string{
@@ -33,6 +34,7 @@ var eventTypeLabels = map[EventType]string{
 	EventTypeCE:  "CE",
 	EventTypeECE: "ECE",
 	EventTypeCWR: "CWR",
+	EventTypeNS:  "NS",
 }
 
 type EventType int
@@ -42,9 +44,10 @@ const (
 	EventTypeCE
 	EventTypeECE
 	EventTypeCWR
+	EventTypeNS
 )
 
-const EventTypeCount = 4
+const EventTypeCount = 5
 
 type ECN uint8
 
@@ -127,6 +130,10 @@ func (fd *FlowData) AddPacket(gp gopacket.Packet, tcp *layers.TCP, up bool, newF
 			p.AddEvent(EventTypeECE)
 			fd.CountEvent(EventTypeECE, up)
 		}
+		if tcp.NS {
+			p.AddEvent(EventTypeNS)
+			fd.CountEvent(EventTypeNS, up)
+		}
 	}
 
 	if ip4l := gp.Layer(layers.LayerTypeIPv4); ip4l != nil {
@@ -205,14 +212,14 @@ func processPackets(packets []Packet, window int) {
 func process(data map[gopacket.Flow]*FlowData, window int) {
 	for _, v := range data {
 		fmt.Printf("%s:\n", v.FlowString())
-		fmt.Printf("   Up:   SCE=%d, CE=%d, ECE=%d, CWR=%d, total=%d\n",
+		fmt.Printf("   Up:   SCE=%d, CE=%d, ECE=%d, CWR=%d, NS=%d, total=%d\n",
 			v.UpCounts[EventTypeSCE], v.UpCounts[EventTypeCE],
 			v.UpCounts[EventTypeECE], v.UpCounts[EventTypeCWR],
-			len(v.UpPackets))
-		fmt.Printf("   Down: SCE=%d, CE=%d, ECE=%d, CWR=%d, total=%d\n",
+			v.UpCounts[EventTypeNS], len(v.UpPackets))
+		fmt.Printf("   Down: SCE=%d, CE=%d, ECE=%d, CWR=%d, NS=%d, total=%d\n",
 			v.DownCounts[EventTypeSCE], v.DownCounts[EventTypeCE],
 			v.DownCounts[EventTypeECE], v.DownCounts[EventTypeCWR],
-			len(v.DownPackets))
+			v.DownCounts[EventTypeNS], len(v.DownPackets))
 
 		processPackets(v.UpPackets, window)
 		processPackets(v.DownPackets, window)

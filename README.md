@@ -1,7 +1,7 @@
 # cctrace
 
 cctrace creates xplot.org plots of TCP congestion control signals including
-CE, ECE, CWR and the proposed [SCE](https://github.com/dtaht/bufferbloat-rfcs/blob/master/sce/ELR%20Proposal%201%20(SCE).txt).
+CE, ECE, CWR, NS and the proposed [SCE](https://github.com/dtaht/bufferbloat-rfcs/blob/master/sce/ELR%20Proposal%201%20(SCE).txt) (also known as ECT(1)).
 
 Feel free to report any problems or feature requests as issues. IPv6 is not
 tested.
