@@ -16,38 +16,99 @@ import (
 
 const DefaultWindow = 50
 
-const UpSymbol = "rarrow"
-
-const DownSymbol = "larrow"
-
-var eventTypeColors = map[EventType]string{
-	EventType(0): "white",
-	EventTypeSCE: "yellow",
-	EventTypeCE:  "red",
-	EventTypeECE: "blue",
-	EventTypeCWR: "green",
-	EventTypeNS:  "purple",
+type EventConfig struct {
+	Plot bool
+	UpSymbol string
+	DownSymbol string
+	Color string
+	Label string
+	LabelAll bool
+	TextItem string
+	PlotAllUp bool
+	PlotAllDown bool
 }
 
-var eventTypeLabels = map[EventType]string{
-	EventTypeSCE: "SCE",
-	EventTypeCE:  "CE",
-	EventTypeECE: "ECE",
-	EventTypeCWR: "CWR",
-	EventTypeNS:  "NS",
+var Config = map[EventType]EventConfig {
+	EventTypeECT: {
+		Plot: false,
+		UpSymbol: "rarrow",
+		DownSymbol: "larrow",
+		Color: "white",
+		Label: "ECT",
+		LabelAll: false,
+		TextItem: "ltext",
+		PlotAllUp: false,
+		PlotAllDown: false,
+	},
+	EventTypeSCE: {
+		Plot: true,
+		UpSymbol: "rarrow",
+		DownSymbol: "larrow",
+		Color: "yellow",
+		Label: "SCE",
+		LabelAll: false,
+		TextItem: "ltext",
+		PlotAllUp: true,
+		PlotAllDown: false,
+	},
+	EventTypeCE: {
+		Plot: true,
+		UpSymbol: "rarrow",
+		DownSymbol: "larrow",
+		Color: "red",
+		Label: "CE",
+		LabelAll: true,
+		TextItem: "ltext",
+		PlotAllUp: false,
+		PlotAllDown: false,
+	},
+	EventTypeECE: {
+		Plot: true,
+		UpSymbol: "rarrow",
+		DownSymbol: "larrow",
+		Color: "blue",
+		Label: "ECE",
+		LabelAll: false,
+		TextItem: "ltext",
+		PlotAllUp: false,
+		PlotAllDown: false,
+	},
+	EventTypeCWR: {
+		Plot: true,
+		UpSymbol: "rarrow",
+		DownSymbol: "larrow",
+		Color: "green",
+		Label: "CWR",
+		LabelAll: false,
+		TextItem: "ltext",
+		PlotAllUp: false,
+		PlotAllDown: false,
+	},
+	EventTypeNS: {
+		Plot: true,
+		UpSymbol: "rarrow",
+		DownSymbol: "larrow",
+		Color: "purple",
+		Label: "NS",
+		LabelAll: false,
+		TextItem: "ltext",
+		PlotAllUp: false,
+		PlotAllDown: false,
+	},
 }
 
 type EventType int
 
 const (
-	EventTypeSCE EventType = 1 << iota
+	EventTypeECT EventType = 1 << iota
+	EventTypeSCE
 	EventTypeCE
 	EventTypeECE
 	EventTypeCWR
 	EventTypeNS
 )
 
-const EventTypeCount = 5
+const EventTypeCount = 6
 
 type ECN uint8
 
@@ -101,17 +162,21 @@ func (fd *FlowData) CountEvent(et EventType, up bool) {
 	}
 }
 
-func (fd *FlowData) addEvent(p *Packet, up bool, networkFlow gopacket.Flow, newFlow bool, dscp uint8) {
+func (fd *FlowData) addIPEvent(p *Packet, up bool, networkFlow gopacket.Flow, newFlow bool, dscp uint8) {
 	if newFlow {
 		fd.NetworkFlow = networkFlow
 	}
 
 	switch ECN(dscp & 0x03) {
 	case NotECT:
+		//p.AddEvent(EventTypeNotECT)
+		//fd.CountEvent(EventTypeNotECT, up)
 	case SCE:
 		p.AddEvent(EventTypeSCE)
 		fd.CountEvent(EventTypeSCE, up)
 	case ECT:
+		p.AddEvent(EventTypeECT)
+		fd.CountEvent(EventTypeECT, up)
 	case CE:
 		p.AddEvent(EventTypeCE)
 		fd.CountEvent(EventTypeCE, up)
@@ -134,16 +199,16 @@ func (fd *FlowData) AddPacket(gp gopacket.Packet, tcp *layers.TCP, up bool, newF
 			p.AddEvent(EventTypeNS)
 			fd.CountEvent(EventTypeNS, up)
 		}
-	}
-
-	if ip4l := gp.Layer(layers.LayerTypeIPv4); ip4l != nil {
-		ip4, _ := ip4l.(*layers.IPv4)
-		fd.addEvent(p, up, ip4.NetworkFlow(), newFlow, ip4.TOS)
-	}
-
-	if ip6l := gp.Layer(layers.LayerTypeIPv6); ip6l != nil {
-		ip6, _ := ip6l.(*layers.IPv6)
-		fd.addEvent(p, up, ip6.NetworkFlow(), newFlow, ip6.TrafficClass)
+	
+		if ip4l := gp.Layer(layers.LayerTypeIPv4); ip4l != nil {
+			ip4, _ := ip4l.(*layers.IPv4)
+			fd.addIPEvent(p, up, ip4.NetworkFlow(), newFlow, ip4.TOS)
+		}
+	
+		if ip6l := gp.Layer(layers.LayerTypeIPv6); ip6l != nil {
+			ip6, _ := ip6l.(*layers.IPv6)
+			fd.addIPEvent(p, up, ip6.NetworkFlow(), newFlow, ip6.TrafficClass)
+		}
 	}
 
 	if up {
@@ -154,8 +219,11 @@ func (fd *FlowData) AddPacket(gp gopacket.Packet, tcp *layers.TCP, up bool, newF
 }
 
 func (fd *FlowData) FlowString() string {
-	return fmt.Sprintf("%s:%s-%s:%s", fd.NetworkFlow.Src(), fd.TransportFlow.Src(),
-		fd.NetworkFlow.Dst(), fd.TransportFlow.Dst())
+	//return fmt.Sprintf("%s:%s-%s:%s", fd.NetworkFlow.Src(), fd.TransportFlow.Src(),
+	//	fd.NetworkFlow.Dst(), fd.TransportFlow.Dst())
+	//return fmt.Sprintf("%s:%s-%s:%s", "10.9.254.10", fd.TransportFlow.Src(),
+	//	"10.9.0.10", fd.TransportFlow.Dst())
+	return fmt.Sprintf("%s-%s", fd.TransportFlow.Src(), fd.TransportFlow.Dst())
 }
 
 func parse(h *pcap.Handle) map[gopacket.Flow]*FlowData {
@@ -226,35 +294,42 @@ func process(data map[gopacket.Flow]*FlowData, window int) {
 	}
 }
 
-func xplotPackets(w io.Writer, packets []Packet, symbol string, lines bool) {
+func xplotPackets(w io.Writer, up bool, packets []Packet, lines bool) {
 	etmask := EventType(0)
 	for i, p := range packets {
 		for et := EventType(1); et < EventType(1<<EventTypeCount); et <<= 1 {
-			if p.EventType&et != EventType(0) {
-				if _, ok := p.Proportions[et]; ok {
-					tv := p.TimevalString()
-					prop := float64(p.Proportions[et]) / float64(p.PropWinSize)
-					fmt.Fprintf(w, "%s %s %f %s\n", symbol, tv, prop,
-						eventTypeColors[et])
-					if etmask&et == 0 {
-						fmt.Fprintf(w, "rtext %s %f %s\n", tv, prop,
-							eventTypeColors[et])
-						fmt.Fprintln(w, eventTypeLabels[et])
-						etmask |= et
-					}
+			if p.EventType&et != EventType(0) ||
+				(up && Config[et].PlotAllUp) || (!up && Config[et].PlotAllDown) {
+				tv := p.TimevalString()
+				prop := float64(p.Proportions[et]) / float64(p.PropWinSize)
+				var symbol string
+				if up {
+					symbol = Config[et].UpSymbol
+				} else {
+					symbol = Config[et].DownSymbol
 				}
 
-				if lines {
-					for j := i - 1; j >= 0; j-- {
-						jp := packets[j]
-						if jp.EventType&et != EventType(0) {
-							fmt.Fprintf(w, "line %s %f %s %f %s\n",
-								jp.TimevalString(),
-								float64(jp.Proportions[et])/float64(jp.PropWinSize),
-								p.TimevalString(),
-								float64(p.Proportions[et])/float64(p.PropWinSize),
-								eventTypeColors[et])
-							break
+				if Config[et].Plot {
+					fmt.Fprintf(w, "%s %s %f %s\n", symbol, tv, prop, Config[et].Color)
+					if Config[et].LabelAll || etmask&et == 0 {
+						fmt.Fprintf(w, "%s %s %f %s\n", Config[et].TextItem, tv, prop,
+							Config[et].Color)
+						fmt.Fprintln(w, Config[et].Label)
+						etmask |= et
+					}
+
+					if lines {
+						for j := i - 1; j >= 0; j-- {
+							jp := packets[j]
+							if jp.EventType&et != EventType(0) {
+								fmt.Fprintf(w, "line %s %f %s %f %s\n",
+									jp.TimevalString(),
+									float64(jp.Proportions[et])/float64(jp.PropWinSize),
+									p.TimevalString(),
+									float64(p.Proportions[et])/float64(p.PropWinSize),
+									Config[et].Color)
+								break
+							}
 						}
 					}
 				}
@@ -281,8 +356,8 @@ func xplot(data map[gopacket.Flow]*FlowData, lines bool) error {
 		fmt.Fprintln(w, "Time")
 		fmt.Fprintln(w, "ylabel")
 		fmt.Fprintln(w, "Proportion")
-		xplotPackets(w, v.UpPackets, UpSymbol, lines)
-		xplotPackets(w, v.DownPackets, DownSymbol, lines)
+		xplotPackets(w, true, v.UpPackets, lines)
+		xplotPackets(w, false, v.DownPackets, lines)
 		fmt.Fprintln(w, "go")
 		w.Flush()
 	}
