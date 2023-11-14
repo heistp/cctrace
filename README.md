@@ -9,7 +9,7 @@ Install instructions:
 
 1. Install libpcap
 2. [Install Go](https://golang.org/dl/)
-3. Install cctrace: `go get -u github.com/heistp/cctrace`
+3. Install cctrace: `go install github.com/heistp/cctrace@latest`
 4. Make sure location of cctrace is in your `PATH` (by default `~/go/bin`)
 5. Run `cctrace` for usage
 
